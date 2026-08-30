@@ -64,6 +64,7 @@ import {
 } from './members.ts'
 import { TERMINAL_TASK_STATUSES, type TeamMember, type TeamState, type TeamTask } from './types.ts'
 import { installTeamScheduler } from './scheduler.ts'
+import { DshMemberTransport, MemberTransportRegistry } from './member-transport.ts'
 import { resolveTeamProfile } from './profiles.ts'
 
 /** Resolved plugin config consumed by the tools. */
@@ -447,7 +448,14 @@ export function stagedPlanFeedbackContext(teamName: string): string {
 export function registerAgentTeamsTools(ctx: Context, config: ToolsConfig): AgentTeamsRuntime {
   installRetiredMemberGuard(ctx, config.stateDir)
   const memberSelections = installMemberSelectionRuntime(ctx, config.stateDir)
-  const scheduler = installTeamScheduler(ctx, { stateDir: config.stateDir, executionPrompt: config.executionPrompt })
+  const memberTransports = new MemberTransportRegistry()
+  memberTransports.register('dsh', new DshMemberTransport(ctx))
+  const scheduler = installTeamScheduler(ctx, {
+    stateDir: config.stateDir,
+    executionPrompt: config.executionPrompt,
+    memberTransports,
+    memberProvider: config.memberProvider,
+  })
 
   const updateStagedPlanBatch: AgentTeamsRuntime['updateStagedPlanBatch'] = async (captain, teamId, mutations, signal) => {
     if (mutations.length === 0) throw new Error('at least one staged plan operation is required')

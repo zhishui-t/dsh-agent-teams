@@ -16,7 +16,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import type { Agent, AgentStatus } from '@deepseek-ai/dsh-agent'
 import type { SessionId } from '@deepseek-ai/dsh-session'
 import { join } from 'node:path'
-import { deliverToMember } from './members.ts'
+import type { MemberTransportRegistry } from './member-transport.ts'
 import {
   acknowledgeMailbox,
   beginTaskAttempt,
@@ -41,6 +41,10 @@ export const DEPENDENCY_OUTPUTS_TOTAL_MAX_CHARS = 12_000
 export interface SchedulerConfig {
   readonly stateDir: string
   readonly executionPrompt?: string
+  /** Registered member transports (dsh by default; acp from weave). */
+  readonly memberTransports: MemberTransportRegistry
+  /** Fallback transport kind when a member has no explicit executor. */
+  readonly memberProvider: string
 }
 
 export interface TeamScheduler {
@@ -171,15 +175,6 @@ function liveCaptain(ctx: Context, captainSessionId: string, supplied?: Agent): 
   return ctx.agents.get(captainSessionId as SessionId)
 }
 
-function liveMember(ctx: Context, member: TeamMember): Agent | undefined {
-  return ctx.agents.get(member.id as SessionId)
-}
-
-function isMemberAvailable(ctx: Context, member: TeamMember): boolean {
-  const live = liveMember(ctx, member)
-  return live === undefined || live.status === 'idle'
-}
-
 function ownedOpenTask(tasks: readonly TeamTask[], memberName: string): TeamTask | undefined {
   return tasks.find(task => task.assignee === memberName
     && (task.status === 'claimed' || task.status === 'in_progress'))
@@ -304,7 +299,9 @@ export function installTeamScheduler(ctx: Context, config: SchedulerConfig): Tea
         const captain = liveCaptain(ctx, team.captainSessionId, suppliedCaptain)
         if (captain === undefined) return
         let member = team.members.find(candidate => candidate.name === memberName && candidate.status !== 'removed')
-        if (member === undefined || member.id === '' || !isMemberAvailable(ctx, member)) return
+        if (member === undefined || member.id === '') return
+        const transport = config.memberTransports.resolve(member, config.memberProvider)
+        if (!transport.isAvailable(member)) return
 
         // A mailbox-only fallback is real pending work. Deliver it before a
         // fresh task and acknowledge only after Harness accepts the follow-up.
@@ -313,13 +310,12 @@ export function installTeamScheduler(ctx: Context, config: SchedulerConfig): Tea
           await withTeamLock(teamLockKey(stateRoot, team.id), () => (
             claimMailboxDelivery(stateRoot, team!.id, member!.name, unread.map(message => message.id))
           ))
-          const accepted = await deliverToMember(
-            ctx,
+          const accepted = (await transport.deliver({
             captain,
-            member.id,
-            fallbackMailboxPrompt(unread),
-            new AbortController().signal,
-          )
+            member,
+            prompt: fallbackMailboxPrompt(unread),
+            signal: new AbortController().signal,
+          })).accepted
           if (accepted) {
             await withTeamLock(teamLockKey(stateRoot, team.id), () => (
               acknowledgeMailbox(stateRoot, team!.id, member!.name, unread.map(message => message.id))
@@ -336,7 +332,8 @@ export function installTeamScheduler(ctx: Context, config: SchedulerConfig): Tea
           const fresh = await readTeam(stateRoot, team!.id)
           if (fresh === undefined || fresh.halted === true || fresh.phase === 'staged') return undefined
           const currentMember = fresh.members.find(candidate => candidate.name === memberName && candidate.status !== 'removed')
-          if (currentMember === undefined || currentMember.id === '' || !isMemberAvailable(ctx, currentMember)) return undefined
+          if (currentMember === undefined || currentMember.id === '') return undefined
+          if (!transport.isAvailable(currentMember)) return undefined
           const owned = ownedOpenTask(fresh.tasks, currentMember.name)
           // A resident idle member can intentionally leave an attempt open
           // while waiting for guidance, or because the user paused its turn.
@@ -397,13 +394,12 @@ export function installTeamScheduler(ctx: Context, config: SchedulerConfig): Tea
         })
         if (ticket === undefined) return
 
-        const accepted = await deliverToMember(
-          ctx,
+        const accepted = (await transport.deliver({
           captain,
-          ticket.memberId,
-          assignmentPrompt(ticket, config.stateDir, team.id),
-          new AbortController().signal,
-        )
+          member,
+          prompt: assignmentPrompt(ticket, config.stateDir, team.id),
+          signal: new AbortController().signal,
+        })).accepted
         if (accepted) return
 
         // Roll back only our exact failed dispatch. A concurrent captain

@@ -78,6 +78,7 @@ import { openAgentTeamMember } from '../lib/client/session-navigation.js'
 import { steerCaptainReport } from '../lib/tools.js'
 import { parseProfileInvocation, resolveTeamProfile, formatProfilesForPrompt } from '../lib/profiles.js'
 import { memberPersona, memberWelcome } from '../lib/members.js'
+import { MemberTransportRegistry, normalizeTransportKind } from '../lib/member-transport.js'
 import { collectCompletedDependencyOutputs, formatDependencyOutputs, assignmentPrompt } from '../lib/scheduler.js'
 import {
   installMemberSelectionRuntime,
@@ -436,6 +437,18 @@ check(
 )
 
 console.log('2/8 pure rules')
+const transportRegistry = new MemberTransportRegistry()
+transportRegistry.register('dsh', { kind: 'dsh' })
+const forkTransportMember = { name: 'fork', executor: 'fork' }
+const spawnTransportMember = { name: 'spawn', executor: 'spawn' }
+const acpTransportMember = { name: 'acp', executor: 'acp' }
+check('member transport maps spawn/fork to dsh',
+  normalizeTransportKind('fork') === 'dsh'
+    && transportRegistry.resolve(forkTransportMember, 'spawn').kind === 'dsh'
+    && transportRegistry.resolve(spawnTransportMember, 'spawn').kind === 'dsh')
+let unregisteredAcpRejected = false
+try { transportRegistry.resolve(acpTransportMember, 'spawn') } catch { unregisteredAcpRejected = true }
+check('unregistered acp transport rejects loudly', unregisteredAcpRejected)
 check("sanitizeKey('My Team!') -> 'my-team'", sanitizeKey('My Team!') === 'my-team')
 // #15: an ASCII-only whitelist folded every non-Latin name onto one constant,
 // so distinct members shared a mailbox file and the second one was rejected as
