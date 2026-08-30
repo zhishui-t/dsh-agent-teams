@@ -155,6 +155,8 @@ export interface TeamMember {
   model?: string
   /** Resolved reasoning effort captured from the captain or target model default. */
   reasoningEffort?: string
+  /** Member executor transport kind: spawn | fork | acp | custom. */
+  executor?: string
   /** Prompt specific to this member's execution turns. */
   executionPrompt?: string
   /** Configured second-choice route. */

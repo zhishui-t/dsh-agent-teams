@@ -2136,6 +2136,7 @@ async function initializeProfileTeam(input: {
         id: '',
         name: template.name,
         role: template.role,
+        ...template.executor === undefined ? {} : { executor: template.executor },
         provider: selection.provider,
         model: selection.model,
         reasoningEffort: selection.reasoningEffort,
