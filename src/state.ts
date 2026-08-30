@@ -543,6 +543,9 @@ function stripLeadingBom(value: string): string {
 const ATOMIC_RENAME_RETRIES = 3
 /** Pause between rename attempts, giving a briefly-locking owner time to finish. */
 const ATOMIC_RENAME_RETRY_DELAY_MS = 50
+/** Archive moves whole team directories; Windows directory locks can outlive a single file lock, so use a wider retry window. */
+const ARCHIVE_RENAME_RETRIES = 10
+const ARCHIVE_RENAME_RETRY_DELAY_MS = 50
 /**
  * Rename error codes worth retrying before the direct-write fallback. On
  * Windows, replacing an existing file whose target is momentarily held open
@@ -849,14 +852,19 @@ export async function removeTeamDir(stateRoot: string, teamId: string): Promise<
  * @param from - source path.
  * @param to - destination path.
  */
-async function renameWithRetry(from: string, to: string): Promise<void> {
+async function renameWithRetry(
+  from: string,
+  to: string,
+  retries = ATOMIC_RENAME_RETRIES,
+  retryDelayMs = ATOMIC_RENAME_RETRY_DELAY_MS,
+): Promise<void> {
   for (let attempt = 0; ; attempt += 1) {
     try {
       await rename(from, to)
       return
     } catch (error: unknown) {
-      if (isRetryableRenameError(error) && attempt < ATOMIC_RENAME_RETRIES) {
-        await sleep(ATOMIC_RENAME_RETRY_DELAY_MS)
+      if (isRetryableRenameError(error) && attempt < retries) {
+        await sleep(retryDelayMs)
         continue
       }
       throw error
@@ -884,7 +892,7 @@ export async function archiveTeamDir(stateRoot: string, teamId: string): Promise
     // The same Windows EPERM-on-rename applies at the directory boundary: a
     // delete-sharing violation on any file below `target` blocks the move, so
     // retry the transient-lock case before giving up.
-    await renameWithRetry(target, previous)
+    await renameWithRetry(target, previous, ARCHIVE_RENAME_RETRIES, ARCHIVE_RENAME_RETRY_DELAY_MS)
     displaced = true
   } catch (error: unknown) {
     // Only ENOENT means there was nothing to displace; any other failure
@@ -895,11 +903,11 @@ export async function archiveTeamDir(stateRoot: string, teamId: string): Promise
   }
 
   try {
-    await renameWithRetry(source, target)
+    await renameWithRetry(source, target, ARCHIVE_RENAME_RETRIES, ARCHIVE_RENAME_RETRY_DELAY_MS)
   } catch (error: unknown) {
     if (displaced) {
       try {
-        await renameWithRetry(previous, target)
+        await renameWithRetry(previous, target, ARCHIVE_RENAME_RETRIES, ARCHIVE_RENAME_RETRY_DELAY_MS)
       } catch (restoreError: unknown) {
         throw new AggregateError(
           [error, restoreError],

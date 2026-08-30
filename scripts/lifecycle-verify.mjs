@@ -1000,7 +1000,7 @@ try {
   // must return to the ordinary member scheduler instead of staying white and
   // ownerless forever in the activity panel.
   publishStatus(captain, 'idle')
-  await new Promise(resolve => setTimeout(resolve, 20))
+  await new Promise(resolve => setTimeout(resolve, 300))
   const afterCaptainIdle = await state()
   const recoveredParallel = afterCaptainIdle?.tasks.filter(candidate => (
     candidate.id === t8.task_id || candidate.id === t9.task_id
