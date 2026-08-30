@@ -11,12 +11,12 @@
 import type { Context } from '@deepseek-ai/cordis'
 import { readdir } from 'node:fs/promises'
 import { join } from 'node:path'
-import { memberActivity } from './members.ts'
+import { memberActivity } from './members.js'
 import {
   CAPTAIN_KEY, listArchivedTeamIds, readArchivedTeam, readUnreadMailbox, readTeam,
   taskDepthsById, taskVisualState,
-} from './state.ts'
-import type { MemberStatus, TeamState, TeamTask } from './types.ts'
+} from './state.js'
+import type { MemberStatus, TeamState, TeamTask } from './types.js'
 
 /** Visual task state for the activity panel. */
 export type VisualTaskState = 'blocked' | 'open' | 'running' | 'completed' | 'failed' | 'cancelled'

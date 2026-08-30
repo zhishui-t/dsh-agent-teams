@@ -9,7 +9,7 @@
  * @module dsh-agent-teams/profiles
  */
 
-import { CAPTAIN_KEY, sanitizeKey } from './state.ts'
+import { CAPTAIN_KEY, sanitizeKey } from './state.js'
 
 /** Hard cap on named profiles so the usage prompt cannot grow without bound. */
 export const MAX_TEAM_PROFILES = 16
@@ -65,7 +65,7 @@ export interface TeamProfileConfig {
    */
   taskPlanning?: 'captain' | 'seed'
   tasks?: TeamProfileTaskConfig[]
-  reviewPolicy?: import('./types.ts').ReviewPolicy
+  reviewPolicy?: import('./types.js').ReviewPolicy
 }
 
 /** A profile member after trim / pairing / reserved-name checks. */
@@ -100,7 +100,7 @@ export interface NormalizedTeamProfile {
   taskPlanning: 'captain' | 'seed'
   members: NormalizedProfileMember[]
   tasks: NormalizedProfileTask[]
-  reviewPolicy?: import('./types.ts').ReviewPolicy
+  reviewPolicy?: import('./types.js').ReviewPolicy
 }
 
 /** The goal + optional named profile extracted from a slash / gesture line. */
@@ -402,7 +402,7 @@ function normalizeTaskPlanning(value: unknown, path: string): 'captain' | 'seed'
   throw new Error(`${path} must be "captain" or "seed"`)
 }
 
-function normalizeReviewPolicy(value: unknown, path: string): import('./types.ts').ReviewPolicy | undefined {
+function normalizeReviewPolicy(value: unknown, path: string): import('./types.js').ReviewPolicy | undefined {
   if (value === undefined) return undefined
   const raw = asRecord(value, path)
   assertAllowedKeys(raw, REVIEW_POLICY_KEYS, path)

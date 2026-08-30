@@ -19,8 +19,8 @@ import { foldSubagentDescriptor, SubagentError } from '@deepseek-ai/dsh-subagent
 import { ReasoningEffortId } from '@deepseek-ai/dsh-llm'
 import type { SessionId } from '@deepseek-ai/dsh-session'
 import { join } from 'node:path'
-import { readRetiredMemberIds, readTeamSync, readTeam, withTeamLock, writeTeam } from './state.ts'
-import { TERMINAL_TASK_STATUSES, type TeamMember, type TeamState } from './types.ts'
+import { readRetiredMemberIds, readTeamSync, readTeam, withTeamLock, writeTeam } from './state.js'
+import { TERMINAL_TASK_STATUSES, type TeamMember, type TeamState } from './types.js'
 
 /** Persona snapshot of a profile protocol; the full text lives on team.json. */
 export const PERSONA_PROTOCOL_MAX_CHARS = 400

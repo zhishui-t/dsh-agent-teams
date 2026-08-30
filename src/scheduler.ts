@@ -16,8 +16,8 @@ import type { Context } from '@deepseek-ai/cordis'
 import type { Agent, AgentStatus } from '@deepseek-ai/dsh-agent'
 import type { SessionId } from '@deepseek-ai/dsh-session'
 import { join } from 'node:path'
-import type { MemberTransportRegistry } from './member-transport.ts'
-import type { HostHooksRegistry } from './host-hooks.ts'
+import type { MemberTransportRegistry } from './member-transport.js'
+import type { HostHooksRegistry } from './host-hooks.js'
 import {
   acknowledgeMailbox,
   beginTaskAttempt,
@@ -31,8 +31,8 @@ import {
   unsatisfiedDependencies,
   withTeamLock,
   writeTeam,
-} from './state.ts'
-import type { TeamMember, TeamState, TeamTask } from './types.ts'
+} from './state.js'
+import type { TeamMember, TeamState, TeamTask } from './types.js'
 
 /** Per-dependency output cap in the assignment prompt. */
 export const DEPENDENCY_OUTPUT_MAX_CHARS = 2_000

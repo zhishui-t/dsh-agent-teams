@@ -15,7 +15,11 @@
       "default": "./lib/client.js"
     },
     "./cordis.patch.yml": "./cordis.patch.yml",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./acp": {
+      "types": "./src/acp/index.ts",
+      "default": "./lib/acp/index.js"
+    }
   },
   "files": [
     "lib",
@@ -179,5 +183,10 @@
     "react-dom": "^18.2.0",
     "tsdown": "0.22.2",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@agentclientprotocol/sdk": "0.25.1",
+    "yaml": "^2.9.0",
+    "zcode-acp-server": "0.11.9"
   }
 }

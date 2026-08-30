@@ -19,7 +19,7 @@ import {
   type TaskStatus,
   type TeamState,
   type TeamTask,
-} from './types.ts'
+} from './types.js'
 
 const QUALITY_KINDS: readonly TaskKind[] = [
   'requirements',

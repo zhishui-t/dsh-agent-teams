@@ -17,7 +17,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import * as dshSession from '@deepseek-ai/dsh-session'
 import type { Session } from '@deepseek-ai/dsh-session'
 import type { SessionEventMap, SessionId } from '@deepseek-ai/dsh-session/types'
-import type { AgentTeamsEventType } from './event-types.ts'
+import type { AgentTeamsEventType } from './event-types.js'
 
 /** Event types already reported as unsupported, to avoid repetitive logs. */
 const skippedEventTypes = new Set<AgentTeamsEventType>()

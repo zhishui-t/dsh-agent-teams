@@ -9,8 +9,8 @@
 import { useCallback, useEffect, useId, useState, useSyncExternalStore, type FormEvent } from 'react'
 import type { ModelDirectory } from '@deepseek-ai/dsh-client-ui-model-selection/client'
 import { Menu, type MenuEntry } from '@deepseek-ai/dsh-client-ui-primitives'
-import type { ActivityMember, ActivityTask, ActivityTeam } from './activity-monitor.ts'
-import type { AgentTeamsTranslate } from './locales.ts'
+import type { ActivityMember, ActivityTask, ActivityTeam } from './activity-monitor.js'
+import type { AgentTeamsTranslate } from './locales.js'
 import css from './ActivityPanel.module.css'
 
 const PLAN_URL = '/plugins/dsh-agent-teams/plan'

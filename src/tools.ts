@@ -16,7 +16,7 @@ import type { JsonValue, SessionId } from '@deepseek-ai/dsh-session'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import type { ToolRunContext } from '@deepseek-ai/dsh-tools'
 import { join } from 'node:path'
-import { appendTeamEvent, captainSessionOf } from './events.ts'
+import { appendTeamEvent, captainSessionOf } from './events.js'
 import {
   acknowledgeMailbox,
   appendMailbox,
@@ -49,8 +49,8 @@ import {
   sanitizeReviewAcceptance,
   sanitizeReviewObjective,
   taskKindOf,
-} from './state.ts'
-import type { AcceptanceResult, CommandResult, ReviewFinding, ReviewVerdict, TaskKind } from './types.ts'
+} from './state.js'
+import type { AcceptanceResult, CommandResult, ReviewFinding, ReviewVerdict, TaskKind } from './types.js'
 import {
   deliverToMember,
   installRetiredMemberGuard,
@@ -61,12 +61,13 @@ import {
   spawnMember,
   validateMemberLlmSelections,
   type MemberRuntimeConfig,
-} from './members.ts'
-import { TERMINAL_TASK_STATUSES, type TeamMember, type TeamState, type TeamTask } from './types.ts'
-import { installTeamScheduler } from './scheduler.ts'
-import { DshMemberTransport, MemberTransportRegistry } from './member-transport.ts'
-import { HostHooksRegistry, type AgentTeamsHostHooks } from './host-hooks.ts'
-import { resolveTeamProfile, type TeamProfileConfig } from './profiles.ts'
+} from './members.js'
+import { TERMINAL_TASK_STATUSES, type TeamMember, type TeamState, type TeamTask } from './types.js'
+import { installTeamScheduler } from './scheduler.js'
+import { DshMemberTransport, MemberTransportRegistry } from './member-transport.js'
+import { registerDefaultAcpMemberTransport } from './acp/default-transport.js'
+import { HostHooksRegistry, type AgentTeamsHostHooks } from './host-hooks.js'
+import { resolveTeamProfile, type TeamProfileConfig } from './profiles.js'
 
 /** Resolved plugin config consumed by the tools. */
 export interface ToolsConfig {
@@ -79,13 +80,13 @@ export interface ToolsConfig {
   /** Prompt injected into member personas and assignments. */
   executionPrompt?: string
   /** Plugin fallback route. */
-  fallback?: import('./profiles.ts').TeamModelFallbackConfig
+  fallback?: import('./profiles.js').TeamModelFallbackConfig
   /** Member delegation depth cap. */
   memberMaxDepth?: number
   /** Team size cap (members). */
   maxMembers: number
   /** Named team profiles from the active DSH profile. */
-  profiles: Record<string, import('./profiles.ts').TeamProfileConfig>
+  profiles: Record<string, import('./profiles.js').TeamProfileConfig>
 }
 
 /** Browser/UI mutations allowed while a plan is waiting for approval. */
@@ -478,6 +479,7 @@ export function registerAgentTeamsTools(
   const memberSelections = installMemberSelectionRuntime(ctx, config.stateDir)
   const memberTransports = new MemberTransportRegistry()
   memberTransports.register('dsh', new DshMemberTransport(ctx))
+  registerDefaultAcpMemberTransport(ctx as never, memberTransports)
   const scheduler = installTeamScheduler(ctx, {
     stateDir: config.stateDir,
     executionPrompt: config.executionPrompt,

@@ -17,9 +17,9 @@ import {
   getActivitySnapshotsSnapshot,
   monitorAgentTeam,
   subscribeActivitySnapshots,
-} from './activity-monitor.ts'
-import type { AgentTeamsCardData } from './agent-teams-card-definition.ts'
-import { LEAD_ART, memberArtUrl } from './artwork.ts'
+} from './activity-monitor.js'
+import type { AgentTeamsCardData } from './agent-teams-card-definition.js'
+import { LEAD_ART, memberArtUrl } from './artwork.js'
 import css from './AgentTeamsCard.module.css'
 
 /** Window event name the floater listens for to open itself. */

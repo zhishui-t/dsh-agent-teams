@@ -18,8 +18,8 @@ import {
   type MemberLlmSelection,
   type MemberRuntimeConfig,
   type MemberSelectionRuntime,
-} from './members.ts'
-import type { TeamMember } from './types.ts'
+} from './members.js'
+import type { TeamMember } from './types.js'
 
 export type MemberRuntimeStatus = 'idle' | 'working'
 
@@ -155,6 +155,10 @@ export class MemberTransportRegistry {
 
   get(kind: string): MemberTransport | undefined {
     return this.#transports.get(normalizeTransportKind(kind))
+  }
+
+  has(kind: string): boolean {
+    return this.#transports.has(normalizeTransportKind(kind))
   }
 
   resolve(member: TeamMember, fallbackKind: string): MemberTransport {

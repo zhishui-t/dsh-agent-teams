@@ -30,16 +30,16 @@ import {
   registerAgentTeamsTools,
   type StagedPlanMutation,
   type ToolsConfig,
-} from './tools.ts'
-import { HostHooksRegistry } from './host-hooks.ts'
-import { installAgentTeamsGestureBoundary, registerAgentTeamsCommand } from './command.ts'
+} from './tools.js'
+import { HostHooksRegistry } from './host-hooks.js'
+import { installAgentTeamsGestureBoundary, registerAgentTeamsCommand } from './command.js'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { collectArchivedTeamsActivity, collectTeamsActivity } from './snapshot.ts'
-import { findTeamByCaptain } from './state.ts'
-import { formatProfilesForPrompt, type TeamProfileConfig } from './profiles.ts'
-import { qualityPlanningPrompt } from './quality-gates.ts'
+import { collectArchivedTeamsActivity, collectTeamsActivity } from './snapshot.js'
+import { findTeamByCaptain } from './state.js'
+import { formatProfilesForPrompt, type TeamProfileConfig } from './profiles.js'
+import { qualityPlanningPrompt } from './quality-gates.js'
 
 /**
  * Structural slice of the web server service, compatible with both the
@@ -78,7 +78,7 @@ export interface Config {
   /** Prompt injected into member personas and automatic task assignments. */
   executionPrompt?: string
   /** Plugin-wide fallback route for unavailable member models. */
-  fallback?: import('./profiles.ts').TeamModelFallbackConfig
+  fallback?: import('./profiles.js').TeamModelFallbackConfig
   /** Member delegation depth cap (default `1`; `0` forbids delegation entirely). */
   memberMaxDepth?: number
   /** Team size cap in members (default `8`). */

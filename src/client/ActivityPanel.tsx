@@ -42,7 +42,7 @@ import {
   taskModelLabel,
   teamIsActive,
   usesParallelTaskGrid,
-} from './activity-model.ts'
+} from './activity-model.js'
 import {
   ACTIVITY_HALT_URL,
   getActivityMonitorTargetsSnapshot,
@@ -53,12 +53,12 @@ import {
   type ActivityMember,
   type ActivityTask,
   type ActivityTeam,
-} from './activity-monitor.ts'
-import { ACTION_ART, LEAD_ART, memberArtUrl } from './artwork.ts'
+} from './activity-monitor.js'
+import { ACTION_ART, LEAD_ART, memberArtUrl } from './artwork.js'
 import { OPEN_PANEL_EVENT } from './AgentTeamsCard.tsx'
 import { StagingPlanEditor } from './StagingPlanEditor.tsx'
-import type { AgentTeamsCardData } from './agent-teams-card-definition.ts'
-import type { AgentTeamsLocaleKey, AgentTeamsTranslate } from './locales.ts'
+import type { AgentTeamsCardData } from './agent-teams-card-definition.js'
+import type { AgentTeamsLocaleKey, AgentTeamsTranslate } from './locales.js'
 import {
   DEFAULT_PANEL_LAYOUT,
   PANEL_LAYOUT_STORAGE_KEY,
@@ -74,7 +74,7 @@ import {
   type PanelBounds,
   type PanelLayout,
   type PanelResizeEdge,
-} from './panel-geometry.ts'
+} from './panel-geometry.js'
 import css from './ActivityPanel.module.css'
 
 /** Grace before the panel collapses once no team remains. */

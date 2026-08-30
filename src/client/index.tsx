@@ -15,11 +15,11 @@ import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
 import type {} from '@deepseek-ai/dsh-client-ui-model-selection/client'
 import { ActivityPanel } from './ActivityPanel.tsx'
 import { AgentTeamsCard, type AgentTeamsCardInjected } from './AgentTeamsCard.tsx'
-import { agentTeamsCardDefinition } from './agent-teams-card-definition.ts'
+import { agentTeamsCardDefinition } from './agent-teams-card-definition.js'
 import {
   AGENT_TEAMS_LOCALE_NAMESPACE, en, zh, type AgentTeamsLocaleKey,
-} from './locales.ts'
-import { openAgentTeamMember } from './session-navigation.ts'
+} from './locales.js'
+import { openAgentTeamMember } from './session-navigation.js'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {

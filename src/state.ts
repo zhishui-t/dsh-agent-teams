@@ -17,8 +17,8 @@ import { createHash, randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { TERMINAL_TASK_STATUSES, type TaskStatus, type TeamMember, type TeamMessage, type TeamProfileSnapshot, type TeamState, type TeamTask } from './types.ts'
-import { hasValidQualityTaskFields, isReviewPolicy } from './quality-gates.ts'
+import { TERMINAL_TASK_STATUSES, type TaskStatus, type TeamMember, type TeamMessage, type TeamProfileSnapshot, type TeamState, type TeamTask } from './types.js'
+import { hasValidQualityTaskFields, isReviewPolicy } from './quality-gates.js'
 
 export {
   buildCoverageMatrix,
@@ -38,7 +38,7 @@ export {
   sanitizeReviewObjective,
   taskKindOf,
   validateCreateTask,
-} from './quality-gates.ts'
+} from './quality-gates.js'
 
 /** Mailbox key of the captain. */
 export const CAPTAIN_KEY = 'captain'
