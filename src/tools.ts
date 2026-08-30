@@ -736,6 +736,7 @@ export function registerAgentTeamsTools(
             ctx,
             config,
             memberSelections,
+            memberTransports,
             captain: input.captain,
             exec: { agent: input.captain, signal: new AbortController().signal } as ToolRunContext,
             stateRoot,
@@ -839,6 +840,7 @@ export function registerAgentTeamsTools(
             ctx,
             config,
             memberSelections,
+            memberTransports,
             captain,
             exec,
             stateRoot,
@@ -2187,6 +2189,7 @@ async function initializeProfileTeam(input: {
   ctx: Context
   config: ToolsConfig
   memberSelections: ReturnType<typeof installMemberSelectionRuntime>
+  memberTransports: MemberTransportRegistry
   captain: Agent
   exec: ToolRunContext
   stateRoot: string
@@ -2265,17 +2268,17 @@ async function initializeProfileTeam(input: {
   try {
     for (const member of draft.members) {
       const selection = selections[spawned.length]!
-      await spawnMember(
-        input.ctx,
-        memberRuntime(input.config),
-        input.memberSelections,
-        selection,
-        input.captain,
-        draft,
+      await input.memberTransports.resolve(member, input.config.memberProvider).provision({
+        ctx: input.ctx,
+        config: memberRuntime(input.config),
+        selections: input.memberSelections,
+        llmSelection: selection,
+        captain: input.captain,
+        team: draft,
         member,
-        input.config.stateDir,
-        input.exec.signal,
-      )
+        stateDir: input.config.stateDir,
+        signal: input.exec.signal,
+      })
       spawned.push(member)
     }
     if (draft.members.some((member) => member.id === '')) {
