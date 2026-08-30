@@ -141,6 +141,8 @@ export interface AgentTeamsRuntime {
   discardStagedTeam(captain: Agent, teamId: string): Promise<{ teamId: string }>
   /** Host hooks registry (knowledge/reflection integration). */
   hostHooks: HostHooksRegistry
+  /** Member transport registry (weave registers ACP transport). */
+  memberTransports: MemberTransportRegistry
   /** Create or reuse a team from a named profile for session activation. */
   bootstrapTeam(input: BootstrapTeamInput): Promise<BootstrapTeamResult>
 }
@@ -711,6 +713,7 @@ export function registerAgentTeamsTools(
     continueStagedPlanning,
     discardStagedTeam,
     hostHooks,
+    memberTransports,
     async bootstrapTeam(input) {
       const workspace = workspaceOf(input.captain)
       const stateRoot = stateRootOf(workspace, config)

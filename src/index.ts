@@ -208,6 +208,7 @@ export function apply(ctx: Context, config: Config): void {
   const agentTeamsRuntime = registerAgentTeamsTools(ctx, resolved, hostHooks)
   ctx.provide('agentTeams/runtime', agentTeamsRuntime)
   ctx.provide('agentTeams/bootstrapTeam', agentTeamsRuntime.bootstrapTeam)
+  ctx.provide('agentTeams/memberTransports', agentTeamsRuntime.memberTransports)
 
   // Deterministic activation surfaces: the closed-namespace `/agent-teams`
   // host command (surfaces in the Web GUI slash menu via the Harness
