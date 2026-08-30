@@ -66,7 +66,7 @@ import { TERMINAL_TASK_STATUSES, type TeamMember, type TeamState, type TeamTask 
 import { installTeamScheduler } from './scheduler.ts'
 import { DshMemberTransport, MemberTransportRegistry } from './member-transport.ts'
 import { HostHooksRegistry, type AgentTeamsHostHooks } from './host-hooks.ts'
-import { resolveTeamProfile } from './profiles.ts'
+import { resolveTeamProfile, type TeamProfileConfig } from './profiles.ts'
 
 /** Resolved plugin config consumed by the tools. */
 export interface ToolsConfig {
@@ -143,6 +143,8 @@ export interface AgentTeamsRuntime {
   hostHooks: HostHooksRegistry
   /** Member transport registry (weave registers ACP transport). */
   memberTransports: MemberTransportRegistry
+  /** Dynamically register a named profile (used by weave yaml teams). */
+  registerProfile(profileName: string, profile: TeamProfileConfig): void
   /** Create or reuse a team from a named profile for session activation. */
   bootstrapTeam(input: BootstrapTeamInput): Promise<BootstrapTeamResult>
 }
@@ -714,6 +716,9 @@ export function registerAgentTeamsTools(
     discardStagedTeam,
     hostHooks,
     memberTransports,
+    registerProfile(profileName, profile) {
+      config.profiles[profileName] = profile
+    },
     async bootstrapTeam(input) {
       const workspace = workspaceOf(input.captain)
       const stateRoot = stateRootOf(workspace, config)
