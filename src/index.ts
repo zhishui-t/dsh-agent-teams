@@ -206,6 +206,8 @@ export function apply(ctx: Context, config: Config): void {
   const hostHooks = new HostHooksRegistry()
   ctx.provide('agentTeams/hostHooks', hostHooks)
   const agentTeamsRuntime = registerAgentTeamsTools(ctx, resolved, hostHooks)
+  ctx.provide('agentTeams/runtime', agentTeamsRuntime)
+  ctx.provide('agentTeams/bootstrapTeam', agentTeamsRuntime.bootstrapTeam)
 
   // Deterministic activation surfaces: the closed-namespace `/agent-teams`
   // host command (surfaces in the Web GUI slash menu via the Harness
