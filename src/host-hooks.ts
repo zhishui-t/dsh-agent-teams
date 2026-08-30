@@ -16,7 +16,10 @@ export interface EnrichAssignmentInput {
 
 export interface TaskSettledInput {
   teamId: string
+  /** yaml/profile name that created this team, used for reflection projectId. */
+  teamProfileName?: string
   taskId: string
+  taskSubject?: string
   taskStatus: 'completed' | 'failed' | 'cancelled'
   memberName?: string
   memberRole?: string

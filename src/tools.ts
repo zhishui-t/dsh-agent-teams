@@ -1776,7 +1776,9 @@ export function registerAgentTeamsTools(
           const settledMember = task.assignee === undefined ? undefined : fresh.members.find(candidate => candidate.name === task.assignee)
           void hostHooks.onTaskSettled({
             teamId: fresh.id,
+            ...fresh.profile?.name === undefined ? {} : { teamProfileName: fresh.profile.name },
             taskId: task.id,
+            ...task.subject === undefined ? {} : { taskSubject: task.subject },
             taskStatus: task.status,
             ...task.assignee === undefined ? {} : { memberName: task.assignee },
             ...settledMember === undefined ? {} : { memberRole: settledMember.role },
