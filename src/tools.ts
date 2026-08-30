@@ -2201,16 +2201,30 @@ async function initializeProfileTeam(input: {
 }): Promise<{ committed: true; state: TeamState }> {
   const profile = resolveTeamProfile(input.config.profiles, input.profileName, input.config.maxMembers)
   const selections: Awaited<ReturnType<typeof resolveMemberLlmSelection>>[] = []
+  const selectionsToValidate: Awaited<ReturnType<typeof resolveMemberLlmSelection>>[] = []
   for (const template of profile.members) {
-    selections.push(await resolveMemberLlmSelection(input.ctx, input.captain, {
-      provider: template.provider,
-      model: template.model,
-      defaultModel: input.config.memberModel,
-      reasoningEffort: template.reasoningEffort,
-      fallback: template.fallback ?? profile.fallback ?? input.config.fallback,
-    }, input.exec.signal))
+    const isAcp = template.executor === 'acp'
+    if (isAcp) {
+      // ACP members own their backend provider/model and must not be resolved
+      // against the host DSH LLM catalog.
+      selections.push({
+        provider: template.provider ?? '',
+        model: template.model ?? '',
+        ...template.reasoningEffort === undefined ? {} : { reasoningEffort: template.reasoningEffort },
+      })
+    } else {
+      const selection = await resolveMemberLlmSelection(input.ctx, input.captain, {
+        provider: template.provider,
+        model: template.model,
+        defaultModel: input.config.memberModel,
+        reasoningEffort: template.reasoningEffort,
+        fallback: template.fallback ?? profile.fallback ?? input.config.fallback,
+      }, input.exec.signal)
+      selections.push(selection)
+      selectionsToValidate.push(selection)
+    }
   }
-  await validateMemberLlmSelections(input.ctx, selections, input.exec.signal)
+  await validateMemberLlmSelections(input.ctx, selectionsToValidate, input.exec.signal)
   const now = Date.now()
   const seedToActual = new Map(profile.tasks.map((template, index) => [template.id, `t${index + 1}`] as const))
   const draft: TeamState = {
