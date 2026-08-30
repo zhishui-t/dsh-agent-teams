@@ -316,6 +316,8 @@ export function installTeamScheduler(ctx: Context, config: SchedulerConfig): Tea
           const accepted = (await transport.deliver({
             captain,
             member,
+            team,
+            workspace,
             prompt: fallbackMailboxPrompt(unread),
             signal: new AbortController().signal,
           })).accepted
@@ -409,6 +411,8 @@ export function installTeamScheduler(ctx: Context, config: SchedulerConfig): Tea
         const accepted = (await transport.deliver({
           captain,
           member,
+          team,
+          workspace,
           prompt,
           signal: new AbortController().signal,
         })).accepted

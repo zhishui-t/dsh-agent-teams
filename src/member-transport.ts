@@ -38,6 +38,8 @@ export interface MemberDeliverHooks {
 export interface MemberDeliverInput {
   captain: Agent
   member: TeamMember
+  team: TeamStateLike
+  workspace: string
   prompt: string
   signal?: AbortSignal
   hooks?: MemberDeliverHooks
