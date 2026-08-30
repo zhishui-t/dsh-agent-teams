@@ -416,6 +416,10 @@ export function installTeamScheduler(ctx: Context, config: SchedulerConfig): Tea
           workspace,
           prompt,
           signal: new AbortController().signal,
+          hooks: {
+            onSettled: (outcome) => settleAcpTask(workspace, teamId, ticket, member, outcome),
+            onStatusChange: () => undefined,
+          },
         })).accepted
         if (accepted) return
 
@@ -438,6 +442,39 @@ export function installTeamScheduler(ctx: Context, config: SchedulerConfig): Tea
         })
       })
     },
+  }
+
+  const settleAcpTask = async (
+    workspace: string,
+    teamId: string,
+    ticket: DispatchTicket,
+    member: TeamMember,
+    outcome: { output: string; failed: boolean; stopReason?: string },
+  ): Promise<void> => {
+    const stateRoot = stateRootOf(workspace, config)
+    await withTeamLock(teamLockKey(stateRoot, teamId), async () => {
+      const fresh = await readTeam(stateRoot, teamId)
+      if (fresh === undefined) return
+      const task = fresh.tasks.find(candidate => candidate.id === ticket.taskId)
+      if (task === undefined || task.attemptId !== ticket.attemptId) return
+      task.status = outcome.failed ? 'failed' : 'completed'
+      task.output = outcome.output
+      task.updatedAt = Date.now()
+      const currentMember = fresh.members.find(candidate => candidate.name === ticket.memberName)
+      if (currentMember !== undefined && currentMember.status !== 'removed') currentMember.status = 'idle'
+      await writeTeam(stateRoot, fresh)
+    })
+    await config.hostHooks.onTaskSettled({
+      teamId,
+      taskId: ticket.taskId,
+      ...ticket.subject === undefined ? {} : { taskSubject: ticket.subject },
+      taskStatus: outcome.failed ? 'failed' : 'completed',
+      ...ticket.memberName === undefined ? {} : { memberName: ticket.memberName },
+      ...member.role === undefined ? {} : { memberRole: member.role },
+      ...member.executor === undefined ? {} : { memberExecutor: member.executor },
+      ...outcome.output === undefined ? {} : { output: outcome.output },
+    })
+    await runtime.kickTeam(workspace, teamId)
   }
 
   const syncMemberStatus = async (agent: Agent, status: AgentStatus): Promise<void> => {
