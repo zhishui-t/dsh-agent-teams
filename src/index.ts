@@ -31,6 +31,7 @@ import {
   type StagedPlanMutation,
   type ToolsConfig,
 } from './tools.ts'
+import { HostHooksRegistry } from './host-hooks.ts'
 import { installAgentTeamsGestureBoundary, registerAgentTeamsCommand } from './command.ts'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -202,7 +203,9 @@ export function apply(ctx: Context, config: Config): void {
 
   // Exported for TDD / docs checks. Not a public runtime API.
 
-  const agentTeamsRuntime = registerAgentTeamsTools(ctx, resolved)
+  const hostHooks = new HostHooksRegistry()
+  ctx.provide('agentTeams/hostHooks', hostHooks)
+  const agentTeamsRuntime = registerAgentTeamsTools(ctx, resolved, hostHooks)
 
   // Deterministic activation surfaces: the closed-namespace `/agent-teams`
   // host command (surfaces in the Web GUI slash menu via the Harness

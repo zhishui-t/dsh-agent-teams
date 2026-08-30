@@ -17,6 +17,7 @@ import type { Agent, AgentStatus } from '@deepseek-ai/dsh-agent'
 import type { SessionId } from '@deepseek-ai/dsh-session'
 import { join } from 'node:path'
 import type { MemberTransportRegistry } from './member-transport.ts'
+import type { HostHooksRegistry } from './host-hooks.ts'
 import {
   acknowledgeMailbox,
   beginTaskAttempt,
@@ -45,6 +46,8 @@ export interface SchedulerConfig {
   readonly memberTransports: MemberTransportRegistry
   /** Fallback transport kind when a member has no explicit executor. */
   readonly memberProvider: string
+  /** External host hooks (knowledge injection, reflection). */
+  readonly hostHooks: HostHooksRegistry
 }
 
 export interface TeamScheduler {
@@ -394,10 +397,19 @@ export function installTeamScheduler(ctx: Context, config: SchedulerConfig): Tea
         })
         if (ticket === undefined) return
 
+        const basePrompt = assignmentPrompt(ticket, config.stateDir, team.id)
+        const prompt = await config.hostHooks.enrichAssignment({
+          teamId: team.id,
+          memberName: member.name,
+          memberRole: member.role,
+          memberExecutor: member.executor,
+          taskId: ticket.taskId,
+          prompt: basePrompt,
+        })
         const accepted = (await transport.deliver({
           captain,
           member,
-          prompt: assignmentPrompt(ticket, config.stateDir, team.id),
+          prompt,
           signal: new AbortController().signal,
         })).accepted
         if (accepted) return

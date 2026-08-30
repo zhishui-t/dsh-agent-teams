@@ -65,6 +65,7 @@ import {
 import { TERMINAL_TASK_STATUSES, type TeamMember, type TeamState, type TeamTask } from './types.ts'
 import { installTeamScheduler } from './scheduler.ts'
 import { DshMemberTransport, MemberTransportRegistry } from './member-transport.ts'
+import { HostHooksRegistry, type AgentTeamsHostHooks } from './host-hooks.ts'
 import { resolveTeamProfile } from './profiles.ts'
 
 /** Resolved plugin config consumed by the tools. */
@@ -116,6 +117,21 @@ export type StagedPlanMutation =
   | { action: 'remove_task'; taskId: string }
   | { action: 'remove_member'; memberName: string }
 
+/** Programmatic team bootstrap input used by weave session activation. */
+export interface BootstrapTeamInput {
+  captain: Agent
+  teamName: string
+  teamId: string
+  profileName: string
+  description?: string
+  approval?: 'automatic' | 'required'
+}
+
+export interface BootstrapTeamResult {
+  team: TeamState
+  created: boolean
+}
+
 /** Runtime bridge shared by model-facing tools and the Web staging surface. */
 export interface AgentTeamsRuntime {
   updateStagedPlan(captain: Agent, teamId: string, mutation: StagedPlanMutation, signal?: AbortSignal): Promise<TeamState>
@@ -123,6 +139,10 @@ export interface AgentTeamsRuntime {
   approveStagedTeam(captain: Agent, teamId: string, signal?: AbortSignal): Promise<{ teamId: string; members: number; tasks: number }>
   continueStagedPlanning(captain: Agent, teamId: string): Promise<{ teamId: string; alreadyWaiting: boolean }>
   discardStagedTeam(captain: Agent, teamId: string): Promise<{ teamId: string }>
+  /** Host hooks registry (knowledge/reflection integration). */
+  hostHooks: HostHooksRegistry
+  /** Create or reuse a team from a named profile for session activation. */
+  bootstrapTeam(input: BootstrapTeamInput): Promise<BootstrapTeamResult>
 }
 
 /** The caller agent, or a loud failure for non-agent callers. */
@@ -445,7 +465,11 @@ export function stagedPlanFeedbackContext(teamName: string): string {
  * @param ctx - the plugin context (injects `tools`).
  * @param config - resolved tool config.
  */
-export function registerAgentTeamsTools(ctx: Context, config: ToolsConfig): AgentTeamsRuntime {
+export function registerAgentTeamsTools(
+  ctx: Context,
+  config: ToolsConfig,
+  hostHooks: HostHooksRegistry = new HostHooksRegistry(),
+): AgentTeamsRuntime {
   installRetiredMemberGuard(ctx, config.stateDir)
   const memberSelections = installMemberSelectionRuntime(ctx, config.stateDir)
   const memberTransports = new MemberTransportRegistry()
@@ -455,6 +479,7 @@ export function registerAgentTeamsTools(ctx: Context, config: ToolsConfig): Agen
     executionPrompt: config.executionPrompt,
     memberTransports,
     memberProvider: config.memberProvider,
+    hostHooks,
   })
 
   const updateStagedPlanBatch: AgentTeamsRuntime['updateStagedPlanBatch'] = async (captain, teamId, mutations, signal) => {
@@ -685,6 +710,48 @@ export function registerAgentTeamsTools(ctx: Context, config: ToolsConfig): Agen
     approveStagedTeam,
     continueStagedPlanning,
     discardStagedTeam,
+    hostHooks,
+    async bootstrapTeam(input) {
+      const workspace = workspaceOf(input.captain)
+      const stateRoot = stateRootOf(workspace, config)
+      return withTeamLock(captainLockKey(stateRoot, input.captain.id), async () => {
+        const current = await findTeamByCaptain(stateRoot, input.captain.id)
+        if (current !== undefined) {
+          return { team: current, created: false }
+        }
+        return withTeamLock(teamLockKey(stateRoot, input.teamId), async () => {
+          const existing = await readTeam(stateRoot, input.teamId)
+          if (existing !== undefined) {
+            throw new Error(`team id "${input.teamId}" is taken by another captain — pick a different team name`)
+          }
+          const created = await initializeProfileTeam({
+            ctx,
+            config,
+            memberSelections,
+            captain: input.captain,
+            exec: { agent: input.captain, signal: new AbortController().signal } as ToolRunContext,
+            stateRoot,
+            teamName: input.teamName,
+            teamId: input.teamId,
+            profileName: input.profileName,
+            ...input.description === undefined ? {} : { description: input.description },
+            staged: input.approval === 'required',
+          })
+          try {
+            await scheduler.kickTeam(workspace, created.state.id, input.captain)
+          } catch (error: unknown) {
+            ctx.logger.warn(`agent-teams: post-bootstrap kick failed: ${String(error)}`)
+          }
+          appendTeamEvent(ctx, input.captain.session, 'agent-teams/team-created', {
+            teamId: created.state.id,
+            captainSessionId: input.captain.id,
+            name: created.state.name,
+            ...created.state.description !== undefined ? { description: created.state.description } : {},
+          })
+          return { team: created.state, created: true }
+        })
+      })
+    },
   }
 
   ctx.tools.register(defineTool({
@@ -1705,6 +1772,18 @@ export function registerAgentTeamsTools(ctx: Context, config: ToolsConfig): Agen
           ...task.verdict === undefined ? {} : { verdict: task.verdict },
           ...task.round === undefined ? {} : { round: task.round },
         })
+        if (task.status === 'completed' || task.status === 'failed' || task.status === 'cancelled') {
+          const settledMember = task.assignee === undefined ? undefined : fresh.members.find(candidate => candidate.name === task.assignee)
+          void hostHooks.onTaskSettled({
+            teamId: fresh.id,
+            taskId: task.id,
+            taskStatus: task.status,
+            ...task.assignee === undefined ? {} : { memberName: task.assignee },
+            ...settledMember === undefined ? {} : { memberRole: settledMember.role },
+            ...settledMember === undefined ? {} : { memberExecutor: settledMember.executor },
+            ...task.output === undefined ? {} : { output: task.output },
+          })
+        }
         for (const created of followUp?.created ?? []) {
           appendTeamEvent(ctx, captainSessionOf(ctx, fresh.captainSessionId, caller.session), 'agent-teams/task-created', {
             teamId: fresh.id,
