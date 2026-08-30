@@ -7,6 +7,8 @@
 
 export interface EnrichAssignmentInput {
   teamId: string
+  /** yaml/profile name that created this team, used for knowledge lookup. */
+  teamProfileName?: string
   memberName: string
   memberRole?: string
   memberExecutor?: string

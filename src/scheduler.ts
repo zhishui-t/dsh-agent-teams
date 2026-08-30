@@ -402,6 +402,7 @@ export function installTeamScheduler(ctx: Context, config: SchedulerConfig): Tea
         const basePrompt = assignmentPrompt(ticket, config.stateDir, team.id)
         const prompt = await config.hostHooks.enrichAssignment({
           teamId: team.id,
+          ...team.profile?.name === undefined ? {} : { teamProfileName: team.profile.name },
           memberName: member.name,
           memberRole: member.role,
           memberExecutor: member.executor,
