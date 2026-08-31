@@ -842,6 +842,7 @@ export interface AcpSpawn {
 }
 
 export interface AcpProviderRegistryContext {
+  get?(name: string): unknown
   subagents?: {
     registerProvider(provider: unknown): () => void
   }
@@ -931,8 +932,8 @@ export function registerAcpSessionProvider(
   context: AcpProviderRegistryContext,
   config: AcpSessionProviderConfig,
 ): boolean {
-  const subagents = context.subagents
-  const subprocess = context.subprocess
+  const subagents = (context.get?.('subagents') ?? context.subagents) as AcpProviderRegistryContext['subagents'] | undefined
+  const subprocess = (context.get?.('subprocess') ?? context.subprocess) as AcpProviderRegistryContext['subprocess'] | undefined
   if (!subagents || !subprocess) return false
 
   const provider = new AcpSessionProvider(config, (spec) => subprocess.spawn(spec))

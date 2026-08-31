@@ -247,6 +247,7 @@ export function createWeaveProviderCommandDefinitions(
  */
 export interface AcpRegistryContextLike {
   reflect?: { get(key: string, optional?: boolean): unknown }
+  get?(name: string): unknown
   subprocess?: { spawn(spec: never): unknown }
 }
 
@@ -258,6 +259,6 @@ export function acpRegistryContextFrom(ctx: AcpRegistryContextLike): {
     subagents: ctx.reflect?.get('subagents', false) as
       | { registerProvider?(provider: unknown): () => void }
       | undefined,
-    subprocess: ctx.subprocess as { spawn(spec: never): unknown } | undefined as never,
+    subprocess: (ctx.get?.('subprocess') ?? ctx.subprocess) as { spawn(spec: never): unknown } | undefined as never,
   }
 }

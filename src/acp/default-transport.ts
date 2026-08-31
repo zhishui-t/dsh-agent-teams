@@ -30,6 +30,7 @@ export interface AcpDefaultSubprocessLike {
 }
 
 export interface AcpDefaultRegistrationContext {
+  get?(name: string): unknown
   subprocess?: AcpDefaultSubprocessLike
 }
 
@@ -44,7 +45,7 @@ export function registerDefaultAcpMemberTransport(
   registry: MemberTransportRegistry,
 ): boolean {
   if (registry.has('acp')) return false
-  const subprocess = ctx.subprocess
+  const subprocess = (ctx.get?.('subprocess') ?? ctx.subprocess) as AcpDefaultSubprocessLike | undefined
   if (!subprocess) return false
   const config = zcodeAcpProviderConfigFromEnvironment(process.env)
   if (!config) return false
