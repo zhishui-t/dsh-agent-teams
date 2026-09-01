@@ -598,17 +598,17 @@ export function registerAgentTeamsTools(
         // final roster before spawning even the first durable child.
         await validateMemberLlmSelections(ctx, [...selections.values()], runSignal)
         for (const [member, selection] of selections) {
-          await spawnMember(
+          await memberTransports.resolve(member, config.memberProvider).provision({
             ctx,
-            memberRuntime(config),
-            memberSelections,
-            selection,
+            config: memberRuntime(config),
+            selections: memberSelections,
+            llmSelection: selection,
             captain,
-            fresh,
+            team: fresh,
             member,
-            config.stateDir,
-            runSignal,
-          )
+            stateDir: config.stateDir,
+            signal: runSignal,
+          })
           spawned.push(member)
         }
         if (fresh.members.some((member) => member.id === '')) {
